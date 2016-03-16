@@ -1,5 +1,9 @@
-Manager [![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/aodin/manager) [![Build Status](https://travis-ci.org/aodin/manager.svg?branch=master)](https://travis-ci.org/aodin/manager)
+Manager
 =======
+
+[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/aodin/manager) [![Build Status](https://travis-ci.org/aodin/manager.svg?branch=master)](https://travis-ci.org/aodin/manager)
+
+Totally not an ORM for Go.
 
 For use with [sol/postgres](https://github.com/aodin/sol) and [fields](https://github.com/aodin/fields).
 

@@ -15,6 +15,11 @@ type Manager struct {
 	onDelete, onSelect, onUpdate []sol.Clause
 }
 
+// AddTo adds this manager to the given App
+func (m Manager) AddTo(app *App) error {
+	return app.Add(m)
+}
+
 // TODO default select
 func (m *Manager) All(dest interface{}) error {
 	return m.Query(m.Select(), dest)
