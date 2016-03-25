@@ -104,3 +104,7 @@ func HasApp(name string) bool {
 	}
 	return false
 }
+
+func GetApps() Apps {
+	return apps
+}
