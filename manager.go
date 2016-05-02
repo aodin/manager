@@ -147,15 +147,14 @@ func (m *Manager) UpdateValues(obj Manageable, values ...sol.Values) error {
 }
 
 // Using returns a new instance of the Manager with the given connection
-func (m *Manager) Using(conn sol.Conn) Manager {
-	m.SetConn(conn)
-	return *m
+func (m Manager) Using(conn sol.Conn) Manager {
+	m.conn = conn
+	return m
 }
 
 // Use is an alias of Using
-func (m *Manager) Use(conn sol.Conn) Manager {
-	m.SetConn(conn)
-	return *m
+func (m Manager) Use(conn sol.Conn) Manager {
+	return m.Using(conn)
 }
 
 // New creates a new manager

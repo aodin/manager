@@ -72,7 +72,7 @@ func TestManager(t *testing.T) {
 	}
 	defer tx.Rollback()
 
-	Items.Use(tx)
+	Items.SetConn(tx)
 	tx.Query(Items.Create().Temporary().IfNotExists())
 
 	// Create a new item
@@ -123,7 +123,7 @@ func TestManager_Filter(t *testing.T) {
 	// Filter by only free items
 	FreeItems := Items.Filter(Items.C("is_free").Equals(true))
 
-	FreeItems.Use(tx)
+	FreeItems.SetConn(tx)
 	tx.Query(Items.Create().Temporary().IfNotExists())
 
 	// Create free and non-free items
