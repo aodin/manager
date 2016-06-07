@@ -2,14 +2,48 @@ package manager
 
 import (
 	"os"
+	"sync"
 	"testing"
 
-	"github.com/aodin/config"
+	"github.com/aodin/errors"
 	"github.com/aodin/fields"
 	"github.com/aodin/sol"
 	"github.com/aodin/sol/postgres"
 	"github.com/aodin/sol/types"
 )
+
+const travisCI = "host=localhost port=5432 dbname=manager_test user=postgres sslmode=disable"
+
+var testconn *sol.DB
+var once sync.Once
+
+// getConn returns a postgres connection pool
+func getConn(t *testing.T) *sol.DB {
+	// Check if an ENV VAR has been set, otherwise, use travis
+	credentials := os.Getenv("MANAGER_TEST")
+	if credentials == "" {
+		credentials = travisCI
+	}
+
+	once.Do(func() {
+		var err error
+		if testconn, err = sol.Open("postgres", credentials); err != nil {
+			t.Fatalf("Failed to open connection: %s", err)
+		}
+		testconn.SetMaxOpenConns(25)
+	})
+	return testconn
+}
+
+func InitSchema(conn sol.Conn, tables ...sol.Tabular) {
+	// Create the given schemas
+	for _, table := range tables {
+		if table == nil || table.Table() == nil {
+			continue
+		}
+		conn.Query(table.Table().Create().IfNotExists().Temporary())
+	}
+}
 
 // Test schemas
 var Items = New(postgres.Table("items",
@@ -28,51 +62,30 @@ type Item struct {
 	fields.Timestamp
 }
 
+func (item Item) Error(conn sol.Conn) *errors.Error {
+	return nil
+}
+
+func (item *Item) Save(conn sol.Conn) error {
+	return conn.Query(Items.Insert().Values(item).Returning(), item)
+}
+
 // Item should implement the Manageable interface
-var _ Manageable = Item{}
+var _ Managed = &Item{}
 
 func NewItem(name string) Item {
 	return Item{Name: name}
 }
 
-var travisCI = config.Database{
-	Driver:  "postgres",
-	Host:    "localhost",
-	Port:    5432,
-	Name:    "travis_ci_test",
-	User:    "postgres",
-	SSLMode: "disable",
-}
-
-// getConfigOrUseTravis returns the parsed db.json if it exists or the
-// travisCI config if it does not
-func getConfigOrUseTravis() (config.Database, error) {
-	conf, err := config.ParseDatabasePath("./db.json")
-	if os.IsNotExist(err) {
-		return travisCI, nil
-	}
-	return conf, err
-}
-
 func TestManager(t *testing.T) {
-	conf, err := getConfigOrUseTravis()
-	if err != nil {
-		t.Fatalf("Failed to parse database config: %s", err)
-	}
-
-	conn, err := sol.Open(conf.Credentials())
-	if err != nil {
-		t.Fatalf("Failed to connect to a PostGres instance: %s", err)
-	}
-	defer conn.Close()
-
-	tx, err := conn.Begin()
+	tx, err := getConn(t).Begin()
 	if err != nil {
 		t.Fatalf("Failed to begin new transaction: %s", err)
 	}
 	defer tx.Rollback()
 
 	Items.SetConn(tx)
+
 	tx.Query(Items.Create().Temporary().IfNotExists())
 
 	// Create a new item
@@ -88,7 +101,7 @@ func TestManager(t *testing.T) {
 	// TODO Update via Save
 	// UpdateValues
 	a.Name = "b"
-	if err = Items.UpdateValues(a, sol.Values{"name": a.Name}); err != nil {
+	if err = Items.UpdateValues(&a, sol.Values{"name": a.Name}); err != nil {
 		t.Errorf("UpdateValues should not error: %s", err)
 	}
 
@@ -103,18 +116,7 @@ func TestManager(t *testing.T) {
 }
 
 func TestManager_Filter(t *testing.T) {
-	conf, err := getConfigOrUseTravis()
-	if err != nil {
-		t.Fatalf("Failed to parse database config: %s", err)
-	}
-
-	conn, err := sol.Open(conf.Credentials())
-	if err != nil {
-		t.Fatalf("Failed to connect to a PostGres instance: %s", err)
-	}
-	defer conn.Close()
-
-	tx, err := conn.Begin()
+	tx, err := getConn(t).Begin()
 	if err != nil {
 		t.Fatalf("Failed to begin new transaction: %s", err)
 	}

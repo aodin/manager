@@ -15,9 +15,9 @@ type Manager struct {
 	onDelete, onSelect, onUpdate []sol.Clause
 }
 
-// AddTo adds this manager to the given App
-func (m Manager) AddTo(app *App) error {
-	return app.Add(m)
+// AddTo adds the manager's table to the given Schema
+func (m Manager) AddTo(schema *Schema) error {
+	return schema.Add(m.TableElem)
 }
 
 // TODO default select
@@ -31,13 +31,13 @@ func (m *Manager) BulkCreate(obj interface{}) error {
 }
 
 // Save creates a new object, unless Exists() == true, then it updates
-func (m *Manager) Save(obj Manageable) error {
+func (m *Manager) Save(obj Managed) error {
 	// TODO Always check if the connection has been set?
 	if obj.Exists() {
 		return nil
 	}
 	// TODO Error if passed a non-pointer? Or silently remove the Returning?
-	return m.Query(m.Insert().Values(obj).Returning(), obj)
+	return obj.Save(m.conn)
 }
 
 // GetBy gets an object by the given field and value
@@ -129,13 +129,13 @@ func (m Manager) Filter(clauses ...sol.Clause) Manager {
 	return m.FilterDelete(clauses...).FilterUpdate(clauses...).FilterSelect(clauses...)
 }
 
-// SetConnection replaces the current connection
+// SetConn replaces the current connection
 func (m *Manager) SetConn(conn sol.Conn) {
 	m.conn = conn
 }
 
 // UpdateValues updates the given obj with the given values
-func (m *Manager) UpdateValues(obj Manageable, values ...sol.Values) error {
+func (m *Manager) UpdateValues(obj Managed, values ...sol.Values) error {
 	clauses := m.wherePK(obj.Keys()...)
 
 	// Merge the values

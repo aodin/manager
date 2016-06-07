@@ -1,13 +1,14 @@
 Manager
 =======
 
-[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/aodin/manager) [![Build Status](https://travis-ci.org/aodin/manager.svg?branch=master)](https://travis-ci.org/aodin/manager)
+[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/aodin/manager)
+[![Build Status](https://travis-ci.org/aodin/manager.svg?branch=master)](https://travis-ci.org/aodin/manager)
 
 Totally not an ORM for Go.
 
-For use with [sol/postgres](https://github.com/aodin/sol) and [fields](https://github.com/aodin/fields).
+For use with the SQL toolkits [Sol](https://github.com/aodin/sol) and [Fields](https://github.com/aodin/fields).
 
-Adds convenience methods such as `Get`, auto-joins, and injected conditional clauses.
+Manager adds convenience methods such as `Get`, auto-joins, and injected conditional clauses to SQL tables.
 
 ```go
 // Serial and Timestamp will be set by the database
