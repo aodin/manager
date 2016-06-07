@@ -19,27 +19,38 @@ type Item struct {
     fields.Timestamp
 }
 
+func (item Item) Error(conn sol.Conn) *errors.Error {
+    return nil
+}
+
+func (item *Item) Save(conn sol.Conn) error {
+    return conn.Query(Items.Insert().Values(item).Returning(), item)
+}
+
 // Create a Table and immediately wrap it in a manager. Since the TableElem
 // is embedded all its methods are available
-Items := manager.New(postgres.Table("items",
+var Items = postgres.Table("items",
     fields.Serial{},
     sol.Column("name", types.Varchar().Limit(32).NotNull()),
     sol.Column("is_free", types.Boolean().NotNull()),
     sol.PrimaryKey("id"),
     fields.Timestamp{},
-))
+)
 
-Items.Use(conn) // A connection must be set
+var ItemsManager = manager.New(Items)
 
-item := NewItem("a")
-Items.Save(&item) // Pass a pointer for database-level field assignments
-log.Println(item.Exists())
+func main() {
+    Items.Use(conn) // A connection must be set
 
-Items.Get(&item, item.ID)
+    item := NewItem("a")
+    Items.Save(&item) // Pass a pointer for database-level field assignments
+    log.Println(item.Exists())
+
+    Items.Get(&item, item.ID)
+}
 ```
 
 Extend the manager by embedding it in your own struct.
-
 
 Happy Hacking!
 
